@@ -1,4 +1,5 @@
 #include <string>
+#include <string.h>
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -14,8 +15,10 @@ using std::string;
 // Check that Json has the properties we want.
 #include <type_traits>
 #define CHECK_TRAIT(x) static_assert(std::x::value, #x)
+#ifndef _WINDOWS
 CHECK_TRAIT(is_nothrow_constructible<Json>);
 CHECK_TRAIT(is_nothrow_default_constructible<Json>);
+#endif
 CHECK_TRAIT(is_copy_constructible<Json>);
 CHECK_TRAIT(is_nothrow_move_constructible<Json>);
 CHECK_TRAIT(is_copy_assignable<Json>);
