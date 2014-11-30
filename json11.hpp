@@ -56,6 +56,12 @@
 #include <memory>
 #include <initializer_list>
 
+#ifdef _MSC_VER
+#define NOEXCEPT
+#else
+#define NOEXCEPT noexcept
+#endif
+
 namespace json11 {
 
 class JsonValue;
@@ -72,8 +78,8 @@ public:
     typedef std::map<std::string, Json> object;
 
     // Constructors for the various types of JSON value.
-    Json() noexcept;                // NUL
-    Json(std::nullptr_t) noexcept;  // NUL
+    Json() NOEXCEPT;                // NUL
+    Json(std::nullptr_t) NOEXCEPT;  // NUL
     Json(double value);             // NUMBER
     Json(int value);                // NUMBER
     Json(bool value);               // BOOL
