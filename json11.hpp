@@ -54,12 +54,17 @@
 #include <vector>
 #include <map>
 #include <memory>
-#include <initializer_list>
+#include <list>
 
 #ifdef _MSC_VER
 #define NOEXCEPT
 #else
 #define NOEXCEPT noexcept
+#endif
+
+#ifdef __INTIME__
+#undef BOOL
+#undef NUL
 #endif
 
 namespace json11 {
@@ -175,7 +180,7 @@ public:
      * Return true if this is a JSON object and, for each item in types, has a field of
      * the given type. If not, return false and set err to a descriptive message.
      */
-    typedef std::initializer_list<std::pair<std::string, Type>> shape;
+    typedef std::list<std::pair<std::string, Type>> shape;
     bool has_shape(const shape & types, std::string & err) const;
 
 private:
