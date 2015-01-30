@@ -1,62 +1,54 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-PROJECT(json11)
+#-----------------------------------------------------------------------
+# CPM configuration
+#-----------------------------------------------------------------------
+set(CPM_MODULE_NAME "json11")
+set(CPM_LIB_TARGET_NAME ${CPM_MODULE_NAME})
 
-SET(LIBRARY_VERSION_STRING 0.1.0)
+if ((DEFINED CPM_DIR) AND (DEFINED CPM_UNIQUE_ID) AND (DEFINED CPM_TARGET_NAME))
+  set(CPM_LIB_TARGET_NAME ${CPM_TARGET_NAME})
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CPM_DIR})
+  include(CPM)
+else()
+  set(CPM_DIR "${CMAKE_CURRENT_BINARY_DIR}/cpm-packages" CACHE TYPE STRING)
+  find_package(Git)
+  if(NOT GIT_FOUND)
+    message(FATAL_ERROR "CPM requires Git.")
+  endif()
+  if (NOT EXISTS ${CPM_DIR}/CPM.cmake)
+    execute_process(
+      COMMAND "${GIT_EXECUTABLE}" clone https://github.com/iauns/cpm ${CPM_DIR}
+      RESULT_VARIABLE error_code
+      OUTPUT_VARIABLE head_sha)
+    if(error_code)
+      message(FATAL_ERROR "CPM failed to get the hash for HEAD")
+    endif()
+  endif()
+  include(${CPM_DIR}/CPM.cmake)
+endif()
 
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+CPM_InitModule(${CPM_MODULE_NAME})
 
-# Compilation flags
-IF (MSVC)
-  IF (MSVC_VERSION VERSION_LESS "1800")
-    MESSAGE(FATAL_ERROR "Update to Visual Studio version which fully support C++11 (>= VS2013)")
-  ENDIF()
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /GR-")
-ELSE()
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
+#-----------------------------------------------------------------------
+# C++11
+#-----------------------------------------------------------------------
+if (UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  if (APPLE AND (NOT CMAKE_COMPILER_IS_GNUCXX))
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++")
+  endif ()
+endif()
 
-  IF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    EXECUTE_PROCESS(COMMAND ${CMAKE_CXX_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION)
-    IF(GCC_VERSION VERSION_LESS "4.7")
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-    ELSE()
-      SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    ENDIF()
-  ENDIF()
+#-----------------------------------------------------------------------
+# Source
+#-----------------------------------------------------------------------
+file(GLOB Sources
+  json11.cpp
+  json11.hpp)
 
-  IF(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-  ENDIF()
-ENDIF()
-
-IF (CMAKE_HOST_APPLE AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
-ENDIF()
+add_library(${CPM_LIB_TARGET_NAME} ${Sources})
+target_link_libraries(${CPM_LIB_TARGET_NAME} ${CPM_LIBRARIES})
 
 
-INSTALL(FILES json11.hpp DESTINATION include)
-
-ADD_LIBRARY(json11static STATIC json11.cpp)
-SET_TARGET_PROPERTIES(json11static PROPERTIES
-                      VERSION ${LIBRARY_VERSION_STRING}
-                      OUTPUT_NAME json11
-                      CLEAN_DIRECT_OUTPUT 1)
-INSTALL(TARGETS json11static DESTINATION lib)
-
-SET (PROJECT_BUILD_SHARED NO CACHE BOOL "Set to true to build shared version
-of the library")
-IF(ROJECT_BUILD_SHARED)
-  ADD_LIBRARY(json11shared SHARED json11.cpp)
-  SET_TARGET_PROPERTIES(json11shared PROPERTIES
-                        VERSION ${LIBRARY_VERSION_STRING}
-                        OUTPUT_NAME json11
-                        CLEAN_DIRECT_OUTPUT 1)
-  INSTALL(TARGETS json11shared DESTINATION lib)
-ENDIF()
-
-SET (PROJECT_BUILD_TESTS YES CACHE BOOL "Set to true to build tests")
-IF (PROJECT_BUILD_TESTS)
-  ADD_EXECUTABLE(tests test.cpp)
-  ADD_DEPENDENCIES(tests json11static)
-  TARGET_LINK_LIBRARIES(tests json11static)
-ENDIF()

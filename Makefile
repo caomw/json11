@@ -1,10 +1,6 @@
 all: test
 
-test: build/CMakeFiles
-	cmake --build build --target tests
-	bin/tests
+test:
+	tests/run-tests.sh
 
-build/CMakeFiles:
-	mkdir -p build
-	cd build && cmake ..
 
